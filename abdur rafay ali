@@ -1,0 +1,134 @@
+#include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
+#include <iostream>
+#include <string>
+#include <ctime>
+
+using namespace sf;
+using namespace std;
+
+// Function to generate random runs
+int randomRuns() {
+    return rand() % 7; // Random number between 0 and 6
+}
+
+int main() {
+    // Seed for random number generation
+    srand(static_cast<unsigned>(time(0)));
+
+    // Window dimensions
+    const int windowWidth = 800;
+    const int windowHeight = 600;
+
+    // Create the window
+    RenderWindow window(VideoMode(windowWidth, windowHeight), "Cricket Video Game");
+
+    // Load font for text
+    Font font;
+    if (!font.loadFromFile("arial.ttf")) {
+        cout << "Error loading font!" << endl;
+        return -1;
+    }
+
+    // Text for instructions
+    Text instructions("Press SPACE to hit the ball!", font, 24);
+    instructions.setFillColor(Color::White);
+    instructions.setPosition(200, 50);
+
+    // Score display
+    Text scoreText("Score: 0", font, 30);
+    scoreText.setFillColor(Color::White);
+    scoreText.setPosition(20, 20);
+
+    // Outcome message
+    Text outcomeMessage("", font, 30);
+    outcomeMessage.setFillColor(Color::Green);
+    outcomeMessage.setPosition(200, 300);
+
+    // Ball
+    CircleShape ball(10);
+    ball.setFillColor(Color::Red);
+    ball.setPosition(windowWidth / 2, 500);
+
+    // Bat
+    RectangleShape bat(Vector2f(100, 20));
+    bat.setFillColor(Color::Blue);
+    bat.setPosition(windowWidth / 2 - 50, 550);
+
+    // Game variables
+    int score = 0;
+    bool ballMoving = false;
+    float ballSpeed = 5.0f;
+
+    // Clock for ball movement
+    Clock clock;
+
+    while (window.isOpen()) {
+        Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == Event::Closed)
+                window.close();
+
+            // Player input
+            if (event.type == Event::KeyPressed) {
+                if (event.key.code == Keyboard::Space && !ballMoving) {
+                    // Start the ball moving
+                    ballMoving = true;
+                    outcomeMessage.setString("");
+                }
+            }
+        }
+
+        // Move the bat
+        if (Keyboard::isKeyPressed(Keyboard::Left) && bat.getPosition().x > 0) {
+            bat.move(-10, 0);
+        }
+        if (Keyboard::isKeyPressed(Keyboard::Right) && bat.getPosition().x < windowWidth - bat.getSize().x) {
+            bat.move(10, 0);
+        }
+
+        // Ball movement
+        if (ballMoving) {
+            ball.move(0, -ballSpeed);
+
+            // Check if the ball hits the bat
+            if (ball.getGlobalBounds().intersects(bat.getGlobalBounds())) {
+                ballMoving = false;
+                ball.setPosition(windowWidth / 2, 500);
+
+                int runs = randomRuns();
+                score += runs;
+
+                outcomeMessage.setString("You hit the ball! Runs: " + to_string(runs));
+                outcomeMessage.setFillColor(Color::Green);
+            }
+
+            // Check if the ball misses the bat
+            if (ball.getPosition().y < 0) {
+                ballMoving = false;
+                ball.setPosition(windowWidth / 2, 500);
+
+                outcomeMessage.setString("You missed the ball!");
+                outcomeMessage.setFillColor(Color::Red);
+            }
+        }
+
+        // Update the score text
+        scoreText.setString("Score: " + to_string(score));
+
+        // Clear the window
+        window.clear(Color::Black);
+
+        // Draw everything
+        window.draw(instructions);
+        window.draw(scoreText);
+        window.draw(outcomeMessage);
+        window.draw(ball);
+        window.draw(bat);
+
+        // Display the updated window
+        window.display();
+    }
+
+    return 0;
+}
